@@ -8,8 +8,8 @@
 <title>Ghost Sync</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+<script async src="https://telegram.org/js/telegram-web-app.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 <style>
 /* ══════════════════════════════════
    TOKENS
@@ -1352,11 +1352,11 @@ function buildSecs(){
    LIVE
 ═══════════════════════════════════════ */
 function loadLive(){
-  // Demo data ile hemen render et
   lives=DL; renderLive();
-  // API'den guncelle (arka planda)
+  // Home'daki live bolumunu de guncelle
+  if(lives.length)buildSecs();
   api('/api/live').then(r=>{
-    if(r?.channels){lives=r.channels;renderLive()}
+    if(r?.channels){lives=r.channels;renderLive();buildSecs()}
   });
 }
 function renderLive(){
