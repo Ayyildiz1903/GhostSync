@@ -8,8 +8,8 @@
 <title>Ghost Sync</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+<script async src="https://telegram.org/js/telegram-web-app.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 <style>
 /* ══════════════════════════════════
    TOKENS
@@ -102,6 +102,15 @@ input,textarea,select{font-family:inherit}
   width:5px;height:5px;border-radius:50%;background:var(--red);border:1px solid var(--bg);display:none}
 .ni-dot.show{display:block;animation:dotpulse 2s ease infinite}
 @keyframes dotpulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ══ SKELETON ══ */
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk{background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.04) 50%,transparent 70%);background-size:200% 100%;animation:shim 1.4s ease-in-out infinite;border-radius:8px}
+.sk-h{height:200px;width:100%;border-radius:14px;margin-bottom:14px}
+.sk-t{height:14px;width:60%;border-radius:6px;margin-bottom:8px}
+.sk-m{height:10px;width:40%;border-radius:6px}
+.sk-card{min-width:140px;flex-shrink:0}
+.sk-sec{display:flex;gap:12px;overflow:hidden;padding:0 14px}
 
 /* ══ HERO ══ */
 .hero{position:relative;height:295px;flex-shrink:0;overflow:hidden}
@@ -396,32 +405,113 @@ input,textarea,select{font-family:inherit}
 .si-q.sd{background:var(--gldg);color:var(--gld);border-color:rgba(255,170,0,.2)}
 .si-q.lo{background:var(--redg);color:var(--red);border-color:rgba(255,61,113,.2)}
 
-/* ══ PLAYER ══ */
-#ply-ov{position:fixed;inset:0;z-index:100;background:#000;display:none;flex-direction:column}
-#ply-ov.open{display:flex}
-.ply-top{display:flex;align-items:center;gap:9px;
-  padding:calc(var(--st)+10px) 14px 12px;
-  background:linear-gradient(to bottom,rgba(0,0,0,.9),transparent);
-  position:absolute;top:0;left:0;right:0;z-index:2}
-.ply-cls{width:35px;height:35px;border-radius:50%;
-  background:rgba(255,255,255,.1);backdrop-filter:blur(8px);
-  color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* ══ PLAYER (v2 — Premium) ══ */
+#ply-ov{position:fixed;inset:0;z-index:100;background:#000;display:none;user-select:none;-webkit-user-select:none}
+#ply-ov.open{display:block}
+#ply-ov video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+#ply-ov .ply-overlay{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;
+  opacity:1;transition:opacity .4s ease;background:rgba(0,0,0,0)}
+#ply-ov .ply-overlay.hidden{opacity:0;pointer-events:none}
+#ply-ov .ply-top{display:flex;align-items:center;gap:9px;
+  padding:calc(var(--st)+10px) 14px 10px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.85),rgba(0,0,0,0));
+  flex-shrink:0}
+.ply-cls{width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.1);backdrop-filter:blur(6px);
+  color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s;border:none;cursor:pointer}
+.ply-cls:active{background:rgba(255,255,255,.25)}
 .ply-ttl{font-size:13px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
-.ply-body{flex:1;display:flex;align-items:center;justify-content:center}
-.ply-body video{width:100%;max-height:100dvh;background:#000;display:block}
-.ply-ctrl{position:absolute;bottom:calc(var(--sb)+10px);left:0;right:0;
-  display:flex;justify-content:center;gap:14px;padding:0 20px;z-index:2}
-.ply-cbtn{background:rgba(255,255,255,.12);backdrop-filter:blur(8px);
-  color:#fff;width:44px;height:44px;border-radius:50%;font-size:18px;
-  display:flex;align-items:center;justify-content:center;transition:background .15s}
-.ply-cbtn:active{background:rgba(255,255,255,.25)}
+.ply-spacer{flex:1}
+.ply-bot{flex-shrink:0;padding:0 14px calc(var(--sb)+12px);
+  background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,0))}
+.ply-progress{width:100%;height:32px;display:flex;align-items:center;cursor:pointer;
+  position:relative;touch-action:none}
+.ply-progress-track{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.2);
+  position:relative;overflow:visible;transition:height .15s}
+.ply-progress:hover .ply-progress-track{height:6px}
+.ply-progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--p),var(--acc));
+  width:0%;position:relative;transition:width .1s linear}
+.ply-progress-thumb{position:absolute;right:-7px;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 12px var(--accglow);opacity:0;transition:opacity .15s}
+.ply-progress:hover .ply-progress-thumb{opacity:1}
+.ply-progress-buf{position:absolute;top:0;left:0;height:100%;border-radius:2px;
+  background:rgba(255,255,255,.1);width:0%}
+.ply-time{display:flex;justify-content:space-between;font-size:11px;font-weight:500;
+  color:rgba(255,255,255,.6);margin-top:-2px;letter-spacing:.03em}
+.ply-ctrl-row{display:flex;align-items:center;gap:6px;padding:4px 0 2px}
+.ply-cbtn{background:rgba(255,255,255,.08);backdrop-filter:blur(6px);
+  color:#fff;width:38px;height:38px;border-radius:50%;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+  border:none;cursor:pointer;flex-shrink:0}
+.ply-cbtn:active{background:rgba(255,255,255,.2);transform:scale(.9)}
+.ply-cbtn.sm{width:32px;height:32px;font-size:13px}
+.ply-cbtn.pp{width:46px;height:46px;font-size:20px;
+  background:linear-gradient(135deg,var(--p),#5b52e0);
+  box-shadow:0 4px 20px var(--pglow)}
+.ply-cbtn.pp:active{transform:scale(.92)}
+.ply-vol-wrap{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
+.ply-vol-track{flex:1;max-width:80px;height:3px;border-radius:2px;background:rgba(255,255,255,.2);
+  cursor:pointer;position:relative;touch-action:none}
+.ply-vol-fill{height:100%;border-radius:2px;background:rgba(255,255,255,.6);width:100%}
+.ply-vol-thumb{position:absolute;right:-5px;top:50%;transform:translateY(-50%);
+  width:10px;height:10px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+.ply-vol-track:hover .ply-vol-thumb{opacity:1}
+.ply-vol-ico{font-size:15px;width:24px;text-align:center;flex-shrink:0;color:rgba(255,255,255,.7);cursor:pointer}
+.ply-right{display:flex;align-items:center;gap:4px;margin-left:auto}
+.ply-badge{font-size:9px;font-weight:800;padding:2px 6px;border-radius:3px;
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);letter-spacing:.05em}
+
+/* Buffering spinner */
+.ply-spinner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;
+  display:none;pointer-events:none}
+.ply-spinner.show{display:block}
+.ply-spinner-ring{width:48px;height:48px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.1);border-top-color:var(--acc);
+  animation:sp1 .8s linear infinite}
+@keyframes sp1{to{transform:rotate(360deg)}}
+
+/* Center play button (big) */
+.ply-bigpp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(1);z-index:1;
+  width:64px;height:64px;border-radius:50%;display:none;
+  align-items:center;justify-content:center;font-size:28px;
+  background:rgba(108,99,255,.35);backdrop-filter:blur(10px);
+  border:2px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),opacity .2s;
+  pointer-events:none}
+.ply-bigpp.show{display:flex;pointer-events:auto}
+.ply-bigpp:active{transform:translate(-50%,-50%) scale(.88)}
+
+/* Double-tap skip hint */
+.ply-skip-hint{position:absolute;top:50%;transform:translateY(-50%);z-index:1;
+  display:none;flex-direction:column;align-items:center;gap:4px;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(8px);padding:10px 14px;border-radius:10px;
+  color:#fff;font-size:12px;font-weight:600}
+.ply-skip-hint.l{left:15%}.ply-skip-hint.r{right:15%}
+.ply-skip-hint.show{display:flex;animation:shFade .5s ease forwards}
+@keyframes shFade{0%{opacity:1;transform:translateY(-50%) scale(1)}100%{opacity:0;transform:translateY(-50%) scale(.9)}}
+
+/* Error */
 .ply-err{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:40px 24px}
 .ply-err-i{font-size:50px;opacity:.2}
 .ply-err-t{font-size:15px;font-weight:700;color:var(--t2)}
 .ply-err-s{font-size:12px;color:var(--t3);line-height:1.5}
 .btn-copy{display:flex;align-items:center;gap:6px;
   background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;
-  padding:10px 18px;border-radius:var(--rb2);font-size:13px;font-weight:700;margin-top:6px;box-shadow:0 4px 14px var(--pglow)}
+  padding:10px 18px;border-radius:var(--rb2);font-size:13px;font-weight:700;margin-top:6px;box-shadow:0 4px 14px var(--pglow);border:none;cursor:pointer}
+
+/* ══ SPLASH ══ */
+#splash{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .6s ease,transform .6s ease}
+#splash.hide{opacity:0;transform:scale(1.05);pointer-events:none}
+#splash.done{display:none}
+.splash-in{text-align:center;padding:40px}
+.splash-ghost{font-size:72px;animation:ghostFloat 2s ease-in-out infinite;margin-bottom:10px}
+.splash-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;background:linear-gradient(135deg,#fff,var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.splash-sub{font-size:13px;color:var(--t3);letter-spacing:1.5px;margin-bottom:24px}
+.splash-bar{width:160px;height:3px;border-radius:2px;background:rgba(108,99,255,.15);margin:0 auto;overflow:hidden}
+.splash-fill{height:100%;width:30%;border-radius:2px;background:linear-gradient(90deg,var(--p),var(--acc));animation:splashLoad 1.8s ease-in-out infinite}
+@keyframes splashLoad{0%{transform:translateX(-100%)}50%{transform:translateX(200%)}100%{transform:translateX(400%)}}
 
 /* ══ SHEETS ══ */
 .shbg{position:fixed;inset:0;z-index:80;background:rgba(4,5,13,.88);backdrop-filter:blur(16px);display:none;align-items:flex-end}
@@ -642,6 +732,16 @@ input,textarea,select{font-family:inherit}
       <div class="mi"><div class="mi-ic y">☀️</div><div class="mi-t"><div class="mi-n">Günlük Öneri</div><div class="mi-d">Her sabah film önerisi</div></div><button class="tog on" id="tog-daily" onclick="togPref('daily',this)"></button></div>
       <div class="mi"><div class="mi-ic g">🌙</div><div class="mi-t"><div class="mi-n">Karanlık Tema</div><div class="mi-d">Ghost Sync varsayılanı</div></div><button class="tog on"></button></div>
     </div>
+    <!-- Telegram dışında açıldıysa login butonu -->
+    <div class="mg" id="tg-login-wrap" style="display:none">
+      <div class="ml">Telegram Hesabınla Giriş Yap</div>
+      <div style="padding:0 14px">
+        <script async src="https://telegram.org/js/telegram-login.js"></script>
+        <div id="tg-login-btn"></div>
+        <div style="font-size:11px;color:var(--t3);margin-top:8px">Mini App'i Telegram'da açtığında otomatik giriş yaparsın.</div>
+      </div>
+    </div>
+
     <div class="mg" style="padding-bottom:8px">
       <div class="ml">Keşfet</div>
       <div class="mi" onclick="openSh('sh-colls');loadCollections()"><div class="mi-ic a">📚</div><div class="mi-t"><div class="mi-n">Koleksiyonlar</div><div class="mi-d">Temalı içerik grupları</div></div><div class="mi-a">›</div></div>
@@ -718,13 +818,53 @@ input,textarea,select{font-family:inherit}
   </div>
 </div>
 
-<!-- PLAYER -->
+<!-- PLAYER (v2 — Premium) -->
 <div id="ply-ov">
-  <div class="ply-top">
-    <button class="ply-cls" onclick="closePly()">✕</button>
-    <div class="ply-ttl" id="ply-ttl">İzleniyor…</div>
+  <video id="pv" playsinline preload="auto"></video>
+  <div class="ply-spinner" id="ply-sp"><div class="ply-spinner-ring"></div></div>
+  <div class="ply-bigpp" id="ply-bpp" onclick="togglePlay()">▶</div>
+  <div class="ply-skip-hint l" id="ply-sk-l"><span>◀◀</span><span id="ply-sk-lv">10s</span></div>
+  <div class="ply-skip-hint r" id="ply-sk-r"><span id="ply-sk-rv">10s</span><span>▶▶</span></div>
+  <div class="ply-overlay" id="ply-ovl">
+    <div class="ply-top">
+      <button class="ply-cls" onclick="closePly()">✕</button>
+      <div class="ply-ttl" id="ply-ttl">İzleniyor…</div>
+      <button class="ply-cbtn sm" onclick="doPiP()" title="PiP">🖼</button>
+      <button class="ply-cbtn sm" onclick="doFullscreen()" title="Tam Ekran (F)">⛶</button>
+    </div>
+    <div class="ply-spacer" onclick="togglePlay()"></div>
+    <div class="ply-bot">
+      <div class="ply-progress" id="ply-prog">
+        <div class="ply-progress-track" id="ply-prog-tk">
+          <div class="ply-progress-buf" id="ply-buf"></div>
+          <div class="ply-progress-fill" id="ply-fill"></div>
+          <div class="ply-progress-thumb" id="ply-thumb"></div>
+        </div>
+      </div>
+      <div class="ply-time">
+        <span id="ply-curr">0:00</span>
+        <span id="ply-dur">0:00</span>
+      </div>
+      <div class="ply-ctrl-row">
+        <button class="ply-cbtn sm" onclick="skipTo(-10)" title="10sn geri">⏪</button>
+        <button class="ply-cbtn sm" onclick="prevEp()" id="ply-prev" title="Önceki bölüm" style="display:none">◀◀</button>
+        <button class="ply-cbtn pp" onclick="togglePlay()" id="ply-ppb">⏸</button>
+        <button class="ply-cbtn sm" onclick="nextEp()" id="ply-next" title="Sonraki bölüm" style="display:none">▶▶</button>
+        <button class="ply-cbtn sm" onclick="skipTo(10)" title="10sn ileri">⏩</button>
+        <div class="ply-vol-wrap">
+          <span class="ply-vol-ico" id="ply-vol-ico" onclick="toggleMute()">🔊</span>
+          <div class="ply-vol-track" id="ply-vol-tk">
+            <div class="ply-vol-fill" id="ply-vol-fill"></div>
+            <div class="ply-vol-thumb" id="ply-vol-th"></div>
+          </div>
+        </div>
+        <div class="ply-right">
+          <span class="ply-badge" id="ply-q-badge"></span>
+          <span class="ply-badge" id="ply-ep-badge"></span>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="ply-body" id="ply-body"></div>
 </div>
 
 <!-- SHEETS -->
@@ -904,15 +1044,33 @@ input,textarea,select{font-family:inherit}
 
 <div id="toast"></div>
 
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="splash-in">
+    <div class="splash-ghost">👻</div>
+    <div class="splash-title">GHOST SYNC</div>
+    <div class="splash-sub">Sinema keyfini yaşa</div>
+    <div class="splash-bar"><div class="splash-fill"></div></div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════ */
-const API        = 'https://your-api.com';
+// ══ VPS'te serve ediliyorsa (api.py üzerinden) boş bırak ══
+// Vercel'e deploy ediyorsan API adresini VPS IP'ne değiştir:
+// Örn: const API = 'http://1.2.3.4:8000';
+// ════════════════════════════════════════════════════════
+const API        = '';
 const OWNER      = 8078887681;
 const ADMINS     = [OWNER];
-const BOT_USER   = 'ghostsyncbot';
+const BOT_USER   = 'Ghostsyncfilmbot';
 const OWNER_LINK = 'tg://openmessage?user_id=8078887681';
+
+// Telegram Login Widget (harici web sayfaları için)
+const TG_CLIENT_ID = '8864446454';
+
 const tg = window.Telegram?.WebApp;
 let TGU = null;
 
@@ -920,11 +1078,19 @@ let TGU = null;
    TELEGRAM INIT
 ═══════════════════════════════════════ */
 function initTG(){
-  if(!tg)return;
+  if(!tg){
+    document.getElementById('tg-login-wrap').style.display='block';
+    return;
+  }
   tg.ready(); tg.expand();
   try{tg.setHeaderColor('#04050d')}catch(e){}
   try{tg.setBackgroundColor('#04050d')}catch(e){}
   TGU = tg.initDataUnsafe?.user||null;
+}
+function onTelegramAuth(user){
+  TGU=user; renderHdr();
+  document.getElementById('tg-login-wrap').style.display='none';
+  showToast('✅ Giriş yapıldı: '+user.first_name);
 }
 const U   = ()=>TGU||{id:0,first_name:'Ziyaretçi',username:null,photo_url:null};
 const isA = ()=>ADMINS.includes(U().id)||U().id===OWNER;
@@ -933,11 +1099,12 @@ const hpt = (t='light')=>{try{tg?.HapticFeedback?.impactOccurred(t)}catch(e){}};
 /* ═══════════════════════════════════════
    API
 ═══════════════════════════════════════ */
-async function api(path,method='GET',body=null){
+async function api(path,method='GET',body=null,timeout=2500){
   try{
-    const o={method,headers:{'Content-Type':'application/json','X-Telegram-Init-Data':tg?.initData||''}};
+    const c=new AbortController();const t=setTimeout(()=>c.abort(),timeout);
+    const o={method,headers:{'Content-Type':'application/json','X-Telegram-Init-Data':tg?.initData||''},signal:c.signal};
     if(body)o.body=JSON.stringify(body);
-    const r=await fetch(API+path,o);
+    const r=await fetch(API+path,o);clearTimeout(t);
     return r.ok?r.json():null;
   }catch{return null}
 }
@@ -981,26 +1148,29 @@ const DSTR=[{id:1,quality:'1080p',language:'TR',m3u8_url:'https://test-streams.m
 let movies=[],series=[],anime=[],lives=[],trending=[],contWatch=[];
 let favSet=new Set(),wlSet=new Set(),folSet=new Set();
 let curDet=null,curF='',srchT=null;
-let hIdx=0,hTimer=null,hItems=[];
-let hlsI=null;
+let hIdx2=0,hTimer2=null,hItems2=[];
+let hlsInstnst=null;
 let refCode='';
 let logoClickCount=0,logoClickTimer=null;
 
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
-async function init(){
+function init(){
   initTG(); initPWA(); initOffline(); initScroll();
   renderHdr();
-  await Promise.all([loadHome(),loadLive(),loadCols()]);
-  bindSearch();
-  const p=new URLSearchParams(location.search);
-  if(p.get('stream'))setTimeout(()=>openStrById(+p.get('stream')),600);
-  if(p.get('live'))  setTimeout(()=>openLiveById(+p.get('live')),600);
-  if(p.get('start')){
-    const v=p.get('start');
-    if(v.startsWith('c_'))setTimeout(()=>openDet(parseInt(v.slice(2))||0),600);
-  }
+  // API'leri beklemeden splash'i goster, 1sn sonra gizle
+  loadHome(); loadLive(); loadCols(); bindSearch();
+  const sp=document.getElementById('splash');
+  setTimeout(()=>{
+    sp.classList.add('hide');
+    setTimeout(()=>sp.classList.add('done'),600);
+    const p=new URLSearchParams(location.search);
+    if(p.get('stream'))openStrById(+p.get('stream'));
+    if(p.get('live'))  openLiveById(+p.get('live'));
+    if(p.get('start')?.startsWith('c_'))
+      openDet(parseInt(p.get('start').slice(2))||0);
+  },800);
   // Easter egg
   document.getElementById('logo-ic').addEventListener('click',()=>{
     logoClickCount++; clearTimeout(logoClickTimer);
@@ -1022,7 +1192,12 @@ function initPWA(){
 function initOffline(){
   const b=document.getElementById('offline-banner');
   window.addEventListener('offline',()=>b.classList.add('show'));
-  window.addEventListener('online',()=>{b.classList.remove('show');showToast('✅ Bağlantı yeniden kuruldu');});
+  window.addEventListener('online',()=>{b.classList.remove('show');showToast('Bağlantı yeniden kuruldu');});
+  // API yanit vermezse 2sn sonra offline banner
+  const ac=new AbortController();
+  setTimeout(()=>ac.abort(),2500);
+  fetch(API+'/api/ping',{signal:ac.signal})
+    .catch(()=>setTimeout(()=>b.classList.add('show'),2000));
 }
 
 /* Scroll-to-top button */
@@ -1051,28 +1226,40 @@ function renderHdr(){
 /* ═══════════════════════════════════════
    HOME
 ═══════════════════════════════════════ */
-async function loadHome(){
-  const[rm,rs,ra,rt,rcw]=await Promise.all([
+function loadHome(){
+  // Demo data ile hemen render et (bekleme yok)
+  movies=DM; series=DS; anime=DA;
+  trending=[...DM,...DS].sort((a,b)=>b.view_count-a.view_count).slice(0,8);
+  contWatch=[];
+  buildHero(); buildSecs();
+  // API'den guncel data al (arka planda, 2.5sn timeout)
+  Promise.allSettled([
     api('/api/content?type=movie&limit=10'),
     api('/api/content?type=series&limit=10'),
     api('/api/content?type=anime&limit=10'),
     api('/api/trending?limit=8'),
-    api(`/api/continue-watching`),
-  ]);
-  movies=rm?.items||DM; series=rs?.items||DS; anime=ra?.items||DA;
-  trending=rt?.items||[...DM,...DS].sort((a,b)=>b.view_count-a.view_count).slice(0,8);
-  contWatch=rcw?.items||[];
-  buildHero(); buildSecs();
+    api('/api/continue-watching'),
+  ]).then(([rm,rs,ra,rt,rcw])=>{
+    const nm=rm.value?.items, ns=rs.value?.items, na=ra.value?.items;
+    if(nm||ns||na){
+      if(nm)movies=nm; if(ns)series=ns; if(na)anime=na;
+      trending=rt.value?.items||trending;
+      contWatch=rcw.value?.items||[];
+      buildHero(); buildSecs();
+    }
+  });
 }
 
-/* HERO CAROUSEL with touch swipe */
+/* HERO CAROUSEL with touch swipe + auto-rotate */
 function buildHero(){
-  const feat=[...movies,...series,...anime].filter(c=>c.is_featured);
-  hItems=feat.length?feat:[movies[0],series[0],anime[0]].filter(Boolean);
+  clearInterval(hTimer2);
+  if(!movies?.length&&!series?.length&&!anime?.length){hItems2=[];return}
+  const feat=[...(movies||[]),...(series||[]),...(anime||[])].filter(c=>c.is_featured);
+  hItems2=feat.length?feat:[(movies||[])[0],(series||[])[0],(anime||[])[0]].filter(Boolean);
   const track=document.getElementById('htrack');
   const dots=document.getElementById('hinds');
   const typeN={movie:'Film',series:'Dizi',anime:'Anime'};
-  track.innerHTML=hItems.map((c,i)=>`
+  track.innerHTML=hItems2.map((c,i)=>`
     <div class="hslide${i===0?' on':''}">
       <div class="hbg" style="${c.poster_url?'background-image:url('+c.poster_url+')':'background:linear-gradient(135deg,#0b0e22,#14163d)'}"></div>
       <div class="hbody">
@@ -1090,19 +1277,19 @@ function buildHero(){
         </div>
       </div>
     </div>`).join('');
-  dots.innerHTML=hItems.map((_,i)=>`<button class="hind${i===0?' on':''}" onclick="goH(${i})"></button>`).join('');
+  dots.innerHTML=hItems2.map((_,i)=>`<button class="hind${i===0?' on':''}" onclick="goH(${i})"></button>`).join('');
   // Touch swipe for hero
   let tx=0;
   track.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
   track.addEventListener('touchend',e=>{
     const dx=e.changedTouches[0].clientX-tx;
-    if(Math.abs(dx)>50)goH(dx<0?(hIdx+1)%hItems.length:(hIdx-1+hItems.length)%hItems.length);
+    if(Math.abs(dx)>50)goH(dx<0?(hIdx2+1)%hItems2.length:(hIdx2-1+hItems2.length)%hItems2.length);
   });
-  clearInterval(hTimer);
-  if(hItems.length>1)hTimer=setInterval(()=>goH((hIdx+1)%hItems.length),5000);
+  clearInterval(hTimer2);
+  if(hItems2.length>1)hTimer2=setInterval(()=>goH((hIdx2+1)%hItems2.length),5000);
 }
 function goH(i){
-  hIdx=i;
+  hIdx2=i;
   document.querySelectorAll('.hslide').forEach((s,j)=>s.classList.toggle('on',j===i));
   document.getElementById('htrack').style.transform=`translateX(${-i*100}%)`;
   document.querySelectorAll('.hind').forEach((d,j)=>d.classList.toggle('on',j===i));
@@ -1123,6 +1310,14 @@ function pcH(c){
 }
 
 function buildSecs(){
+  // Skeleton yukleniyor…
+  if(!trending?.length){
+    document.getElementById('home-secs').innerHTML=`
+      <div class="sec"><div class="sec-hd"><span class="sec-ti"><div class="sec-acc"></div>TREND</span></div><div class="sk-sec">${'<div class="sk-card"><div class="sk-h"></div><div class="sk-t"></div><div class="sk-m"></div></div>'.repeat(5)}</div></div>
+      <div class="sec"><div class="sec-hd"><span class="sec-ti"><div class="sec-acc"></div>FILMLER</span></div><div class="sk-sec">${'<div class="sk-card"><div class="sk-h"></div><div class="sk-t"></div><div class="sk-m"></div></div>'.repeat(5)}</div></div>
+      <div class="sec"><div class="sec-hd"><span class="sec-ti"><div class="sec-acc"></div>DIZILER</span></div><div class="sk-sec">${'<div class="sk-card"><div class="sk-h"></div><div class="sk-t"></div><div class="sk-m"></div></div>'.repeat(5)}</div></div>`;
+    return;
+  }
   const lrow=lives.slice(0,6).map(c=>`
     <div class="lvc" onclick="openLvP(${c.id},'${eq(c.name)}','${eq(c.m3u8_url)}')">
       <div class="lvc-in">
@@ -1153,8 +1348,13 @@ function buildSecs(){
 /* ═══════════════════════════════════════
    LIVE
 ═══════════════════════════════════════ */
-async function loadLive(){
-  const r=await api('/api/live'); lives=r?.channels||DL; renderLive();
+function loadLive(){
+  lives=DL; renderLive();
+  // Home'daki live bolumunu de guncelle
+  if(lives.length)buildSecs();
+  api('/api/live').then(r=>{
+    if(r?.channels){lives=r.channels;renderLive();buildSecs()}
+  });
 }
 function renderLive(){
   const el=document.getElementById('live-sc');
@@ -1176,23 +1376,24 @@ function renderLive(){
 /* ═══════════════════════════════════════
    COLLECTIONS
 ═══════════════════════════════════════ */
-async function loadCols(){
-  const[rf,rwl,rst]=await Promise.all([
+function loadCols(){
+  Promise.all([
     api('/api/favorites'),api('/api/watchlist'),api('/api/my-stats')
-  ]);
-  favSet=new Set((rf?.favorites||[]).map(f=>f.id));
-  wlSet=new Set((rwl?.watchlist||[]).map(w=>w.id));
-  document.getElementById('wl-dot').classList.toggle('show',wlSet.size>0);
-  document.getElementById('ps-f').textContent=favSet.size;
-  document.getElementById('ps-wl').textContent=wlSet.size;
-  if(rst){
-    document.getElementById('ps-w').textContent=rst.watches||0;
-    document.getElementById('ps-r').textContent=rst.ratings||0;
-    if(rst.ref_code){
-      refCode=rst.ref_code;
-      document.getElementById('ref-link').textContent=`t.me/${BOT_USER}?start=r_${rst.ref_code}`;
+  ]).then(([rf,rwl,rst])=>{
+    if(rf?.favorites){favSet=new Set(rf.favorites.map(f=>f.id));
+      document.getElementById('wl-dot').classList.toggle('show',wlSet.size>0);
+      document.getElementById('ps-f').textContent=favSet.size;}
+    if(rwl?.watchlist){wlSet=new Set(rwl.watchlist.map(w=>w.id));
+      document.getElementById('ps-wl').textContent=wlSet.size;}
+    if(rst){
+      document.getElementById('ps-w').textContent=rst.watches||0;
+      document.getElementById('ps-r').textContent=rst.ratings||0;
+      if(rst.ref_code){
+        refCode=rst.ref_code;
+        document.getElementById('ref-link').textContent=`t.me/${BOT_USER}?start=r_${rst.ref_code}`;
+      }
     }
-  }
+  });
 }
 
 function copyRef(){
@@ -1378,10 +1579,12 @@ function buildStreams(streams,content){
   if(!streams?.length){el.innerHTML='';return}
   const qCls={'4K':'k4','1080p':'hd','720p':'','480p':'sd'};
   const isS=content.type!=='movie';
+  const e=encodeURIComponent;
   if(!isS){
+    const jsStreams=e(JSON.stringify(streams));
     el.innerHTML='<div class="slist-t">YAYINLAR</div>'+
       streams.map(s=>`
-        <div class="si" onclick="openStrP(${s.id},'${eq(content.title)}','${eq(s.m3u8_url)}')">
+        <div class="si" onclick="openStrP(${s.id},'${eq(content.title)}','${eq(s.m3u8_url)}',JSON.parse(decodeURIComponent('${jsStreams}')),${content.id},0,0)">
           <div class="si-ic">${s.is_healthy!==0?'▶️':'⚠️'}</div>
           <div class="si-info">
             <div class="si-name">${s.language}</div>
@@ -1391,10 +1594,11 @@ function buildStreams(streams,content){
         </div>`).join('');
   }else{
     const sns=[...new Set(streams.map(s=>s.season))].sort();
+    const jsStreams=e(JSON.stringify(streams));
     el.innerHTML=sns.map(sn=>`
       <div class="slist-t">SEZON ${sn}</div>
       ${streams.filter(s=>s.season===sn).map(ep=>`
-        <div class="si" onclick="openStrP(${ep.id},'${eq(content.title+' S'+sn+'E'+ep.episode)}','${eq(ep.m3u8_url)}')">
+        <div class="si" onclick="openStrP(${ep.id},'${eq(content.title+' S'+sn+'E'+ep.episode)}','${eq(ep.m3u8_url)}',JSON.parse(decodeURIComponent('${jsStreams}')),${content.id},${sn},${ep.episode})">
           <div class="si-ic">${ep.is_healthy!==0?'▶️':'⚠️'}</div>
           <div class="si-info">
             <div class="si-name">Bölüm ${ep.episode}${ep.episode_title?' — '+ep.episode_title:''}</div>
@@ -1465,50 +1669,168 @@ document.getElementById('det-ov').addEventListener('touchend',e=>{
 });
 
 /* ═══════════════════════════════════════
-   PLAYER (HLS.js)
+   PLAYER (v2 — Premium HLS.js)
 ═══════════════════════════════════════ */
-function openStrP(sid,name,url){
-  if(curDet)api('/api/watch','POST',{content_id:curDet.content.id,stream_id:sid,progress:0});
+let hlsInstnst=null;
+let plyCtx=null;
+let plyHideT=null;
+
+function openStrP(sid,name,url,streams,contentId,season,episode){
+  if(sid&&contentId)api('/api/watch','POST',{content_id:contentId,stream_id:sid,progress:0});
+  if(streams&&streams.length>1){
+    const idx=streams.findIndex(s=>s.id===sid);
+    plyCtx={streams,curIdx:idx>=0?idx:0,contentId,title:name,isSeries:season>0};
+  }else{plyCtx=null}
   openPly(name,url);
 }
-function openLvP(id,name,url){if(!url){showToast('⚠️ Link bulunamadı');return}openPly(name,url);}
+function openLvP(id,name,url){
+  if(!url){showToast('⚠️ Link bulunamadı');return}
+  plyCtx=null;openPly(name,url);
+}
 function openLiveById(id){const c=lives.find(c=>c.id===id);if(c)openLvP(c.id,c.name,c.m3u8_url);}
-function openStrById(sid){showToast('Stream yükleniyor…');}
+function openStrById(sid){
+  showToast('Stream açılıyor…');
+  const c=[...movies,...series,...anime].find(x=>x.id===sid);
+  if(c){openDet(sid)}
+  else{api('/api/content/'+sid).then(r=>{if(r)openDet(r.id)}).catch(()=>showToast('❌ İçerik bulunamadı'))}
+}
 
 function openPly(name,url){
   if(!url){showToast('⚠️ Link yok');return}
   hpt('medium');
-  document.getElementById('ply-ov').classList.add('open');
+  const ov=document.getElementById('ply-ov');
+  ov.classList.add('open');
   document.getElementById('ply-ttl').textContent=name;
-  const body=document.getElementById('ply-body');
-  body.innerHTML=`<video id="pv" controls playsinline style="width:100%;max-height:100dvh;background:#000"></video>`;
+  document.getElementById('ply-sp').classList.add('show');
+  document.getElementById('ply-bpp').classList.remove('show');
+  document.getElementById('ply-ovl').classList.remove('hidden');
+  const pe=document.getElementById('ply-prev'),ne=document.getElementById('ply-next');
+  pe.style.display=plyCtx?.isSeries&&plyCtx.curIdx>0?'flex':'none';
+  ne.style.display=plyCtx?.isSeries&&plyCtx.curIdx<(plyCtx.streams.length-1)?'flex':'none';
+  document.getElementById('ply-ep-badge').textContent=plyCtx?.isSeries?`EP ${plyCtx.curIdx+1}/${plyCtx.streams.length}`:'';
   const vid=document.getElementById('pv');
+  vid.removeAttribute('src');vid.load();
+  document.getElementById('ply-fill').style.width='0%';
+  document.getElementById('ply-buf').style.width='0%';
+  document.getElementById('ply-curr').textContent='0:00';
+  document.getElementById('ply-dur').textContent='0:00';
+  document.getElementById('ply-q-badge').textContent='';
   if(typeof Hls!=='undefined'&&Hls.isSupported()){
-    if(hlsI){hlsI.destroy();hlsI=null;}
-    hlsI=new Hls({enableWorker:true,lowLatencyMode:true,maxBufferLength:30});
-    hlsI.loadSource(url); hlsI.attachMedia(vid);
-    hlsI.on(Hls.Events.MANIFEST_PARSED,()=>vid.play().catch(()=>{}));
-    hlsI.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)showPlyErr(url)});
+    if(hlsInst){hlsInst.destroy();hlsInst=null;}
+    hlsInst=new Hls({enableWorker:true,lowLatencyMode:true,maxBufferLength:30,maxMaxBufferLength:60,startLevel:-1});
+    hlsInst.loadSource(url);hlsInst.attachMedia(vid);
+    hlsInst.on(Hls.Events.MANIFEST_PARSED,(_,data)=>{
+      document.getElementById('ply-sp').classList.remove('show');
+      const q=document.getElementById('ply-q-badge');
+      const autoIdx=hlsInst.autoLevelEnabled?hlsInst.levels.length-1:hlsInst.currentLevel;
+      if(autoIdx>=0&&hlsInst.levels?.[autoIdx])q.textContent=hlsInst.levels[autoIdx].height+'p';
+      vid.play().catch(()=>{});
+    });
+    hlsInst.on(Hls.Events.LEVEL_SWITCHED,(_,data)=>{
+      if(data.level>=0&&hlsInst.levels?.[data.level])
+        document.getElementById('ply-q-badge').textContent=hlsInst.levels[data.level].height+'p';
+    });
+    hlsInst.on(Hls.Events.BUFFER_APPENDING,()=>{document.getElementById('ply-sp').classList.remove('show')});
+    hlsInst.on(Hls.Events.BUFFER_APPENDING,(_,data)=>{
+      if(vid.buffered?.length){const b=vid.buffered.end(vid.buffered.length-1)/vid.duration*100;document.getElementById('ply-buf').style.width=Math.min(b,100)+'%'}});
+    hlsInst.on(Hls.Events.FRAG_LOADING,()=>{if(!vid.paused)document.getElementById('ply-sp').classList.add('show')});
+    hlsInst.on(Hls.Events.FRAG_LOADED,()=>{document.getElementById('ply-sp').classList.remove('show')});
+    hlsInst.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)showPlyErr(url)});
   }else if(vid.canPlayType('application/vnd.apple.mpegurl')){
-    vid.src=url; vid.play().catch(()=>{}); vid.onerror=()=>showPlyErr(url);
-  }else{ showPlyErr(url); }
+    vid.src=url;document.getElementById('ply-sp').classList.remove('show');vid.play().catch(()=>{});vid.onerror=()=>showPlyErr(url);
+  }else{document.getElementById('ply-sp').classList.remove('show');showPlyErr(url)}
+  if(!vid._bound){
+    vid._bound=true;
+    vid.addEventListener('timeupdate',updatePlyProg);
+    vid.addEventListener('loadedmetadata',()=>{document.getElementById('ply-dur').textContent=fmtTime(vid.duration);document.getElementById('ply-q-badge').textContent=Math.round(vid.videoHeight||0)+'p'});
+    vid.addEventListener('waiting',()=>{if(!vid.paused)document.getElementById('ply-sp').classList.add('show')});
+    vid.addEventListener('canplay',()=>document.getElementById('ply-sp').classList.remove('show'));
+    vid.addEventListener('play',()=>{document.getElementById('ply-bpp').classList.remove('show');document.getElementById('ply-ppb').textContent='⏸'});
+    vid.addEventListener('pause',()=>{document.getElementById('ply-bpp').classList.add('show');document.getElementById('ply-ppb').textContent='▶'});
+    vid.addEventListener('ended',onVideoEnd);
+    vid.addEventListener('click',togglePlay);
+    let lastTap=0;
+    vid.addEventListener('click',e=>{const now=Date.now();if(now-lastTap<350){const rect=vid.getBoundingClientRect(),x=e.clientX-rect.left;if(x<rect.width/3)skipTo(-10);else if(x>rect.width*2/3)skipTo(10)}lastTap=now});
+  }
+  showPlyCtrls();
 }
 
+function updatePlyProg(){
+  const vid=document.getElementById('pv');
+  if(!vid.duration)return;
+  const p=vid.currentTime/vid.duration*100;
+  document.getElementById('ply-fill').style.width=Math.min(p,100)+'%';
+  document.getElementById('ply-curr').textContent=fmtTime(vid.currentTime);
+  if(vid.buffered?.length){
+    const b=vid.buffered.end(vid.buffered.length-1)/vid.duration*100;
+    document.getElementById('ply-buf').style.width=Math.min(b,100)+'%';}
+}
+function fmtTime(t){if(!t||!isFinite(t))return'0:00';const m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+(s<10?'0':'')+s}
+function togglePlay(){const vid=document.getElementById('pv');if(vid.paused){vid.play().catch(()=>{})}else{vid.pause()}}
+function skipTo(sec){const vid=document.getElementById('pv');if(!vid.duration)return;vid.currentTime=Math.max(0,Math.min(vid.duration,vid.currentTime+sec));showPlyCtrls();const hint=document.getElementById(sec<0?'ply-sk-l':'ply-sk-r'),val=document.getElementById(sec<0?'ply-sk-lv':'ply-sk-rv');val.textContent=Math.abs(sec)+'s';hint.classList.remove('show');void hint.offsetWidth;hint.classList.add('show');setTimeout(()=>hint.classList.remove('show'),500)}
+function onVideoEnd(){document.getElementById('ply-bpp').classList.add('show');document.getElementById('ply-ppb').textContent='▶';if(plyCtx?.isSeries&&plyCtx.curIdx<plyCtx.streams.length-1){setTimeout(()=>nextEp(),3000);showToast('⏭ Sonraki bölüm 3sn içinde…')}}
+function prevEp(){if(!plyCtx||plyCtx.curIdx<=0)return;plyCtx.curIdx--;const s=plyCtx.streams[plyCtx.curIdx];if(s)openStrP(s.id,`${plyCtx.title} EP${s.episode||plyCtx.curIdx+1}`,s.m3u8_url,plyCtx.streams,plyCtx.contentId,s.season,s.episode)}
+function nextEp(){if(!plyCtx||plyCtx.curIdx>=plyCtx.streams.length-1)return;plyCtx.curIdx++;const s=plyCtx.streams[plyCtx.curIdx];if(s)openStrP(s.id,`${plyCtx.title} EP${s.episode||plyCtx.curIdx+1}`,s.m3u8_url,plyCtx.streams,plyCtx.contentId,s.season,s.episode)}
+function doFullscreen(){const el=document.getElementById('ply-ov');if(document.fullscreenElement){document.exitFullscreen()}else{el.requestFullscreen()}}
+function doPiP(){const vid=document.getElementById('pv');if(document.pictureInPictureElement){document.exitPictureInPicture()}else{vid.requestPictureInPicture()}}
+function toggleMute(){const vid=document.getElementById('pv');vid.muted=!vid.muted;document.getElementById('ply-vol-ico').textContent=vid.muted?'🔇':vid.volume>0.5?'🔊':vid.volume>0?'🔉':'🔇';if(!vid.muted)vid.volume=1}
+function setVol(v){const vid=document.getElementById('pv');vid.volume=Math.max(0,Math.min(1,v));document.getElementById('ply-vol-fill').style.width=(vid.volume*100)+'%';document.getElementById('ply-vol-ico').textContent=vid.volume===0?'🔇':vid.volume>0.5?'🔊':vid.volume>0?'🔉':'🔇'}
+function showPlyCtrls(){const ovl=document.getElementById('ply-ovl');ovl.classList.remove('hidden');clearTimeout(plyHideT);if(!document.getElementById('pv').paused)plyHideT=setTimeout(()=>ovl.classList.add('hidden'),3000)}
+
 function showPlyErr(url){
-  document.getElementById('ply-body').innerHTML=`
-    <div class="ply-err">
-      <div class="ply-err-i">👻</div>
-      <div class="ply-err-t">Bu tarayıcıda oynatılamıyor</div>
-      <div class="ply-err-s">VLC veya MX Player ile açabilirsin.<br>Linki kopyala ve oynatıcına yapıştır.</div>
-      <button class="btn-copy" onclick="cpClip('${eq(url)}')">📋 Linki Kopyala</button>
-    </div>`;
+  document.getElementById('ply-sp').classList.remove('show');
+  const ov=document.getElementById('ply-ov');
+  ov.innerHTML=`<div class="ply-err" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5"><div class="ply-err-i">👻</div><div class="ply-err-t">Oynatılamıyor</div><div class="ply-err-s">Link bozuk veya tarayıcı desteklemiyor.<br>VLC / MX Player'da açmayı dene.</div><button class="btn-copy" onclick="cpClip('${eq(url)}')">📋 Linki Kopyala</button></div><button class="ply-cls" onclick="closePly()" style="position:absolute;top:calc(var(--st)+10px);left:14px;z-index:6">✕</button>`;
 }
 
 function closePly(){
-  if(hlsI){hlsI.destroy();hlsI=null;}
-  document.getElementById('ply-ov').classList.remove('open');
-  document.getElementById('ply-body').innerHTML='';
+  if(hlsInst){hlsInst.destroy();hlsInst=null;}
+  const ov=document.getElementById('ply-ov');
+  ov.classList.remove('open');
+  ov.innerHTML=`<video id="pv" playsinline preload="auto"></video><div class="ply-spinner" id="ply-sp"><div class="ply-spinner-ring"></div></div><div class="ply-bigpp" id="ply-bpp" onclick="togglePlay()">▶</div><div class="ply-skip-hint l" id="ply-sk-l"><span>◀◀</span><span id="ply-sk-lv">10s</span></div><div class="ply-skip-hint r" id="ply-sk-r"><span id="ply-sk-rv">10s</span><span>▶▶</span></div><div class="ply-overlay" id="ply-ovl">...</div>`;
+  plyCtx=null;
 }
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  const ov=document.getElementById('ply-ov');
+  if(!ov.classList.contains('open')||e.target.matches('input,textarea,select'))return;
+  switch(e.key){
+    case ' ':case 'k':e.preventDefault();togglePlay();break;
+    case 'f':e.preventDefault();doFullscreen();break;
+    case 'Escape':if(!document.fullscreenElement)closePly();break;
+    case 'ArrowLeft':e.preventDefault();skipTo(-10);break;
+    case 'ArrowRight':e.preventDefault();skipTo(10);break;
+    case 'm':e.preventDefault();toggleMute();break;
+    case 'ArrowUp':e.preventDefault();setVol((document.getElementById('pv').volume||0)+0.1);break;
+    case 'ArrowDown':e.preventDefault();setVol((document.getElementById('pv').volume||0)-0.1);break;
+  }
+});
+
+// Progress + volume drag (delegated — works even after DOM reset)
+let plyDrag=null;
+document.addEventListener('mousedown',e=>{
+  if(e.target.closest('#ply-prog')){plyDrag='seek';seekFrom(e)}
+  else if(e.target.closest('#ply-vol-tk')){plyDrag='vol';volFrom(e)}
+});
+document.addEventListener('mousemove',e=>{
+  if(plyDrag==='seek')seekFrom(e);
+  else if(plyDrag==='vol')volFrom(e);
+});
+document.addEventListener('mouseup',()=>{plyDrag=null});
+document.addEventListener('touchstart',e=>{
+  const t=e.touches[0];
+  if(e.target.closest('#ply-prog'))seekFrom(t);
+  else if(e.target.closest('#ply-vol-tk'))volFrom(t);
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  const t=e.touches[0];
+  if(e.target.closest('#ply-prog')){e.preventDefault();seekFrom(t)}
+  else if(e.target.closest('#ply-vol-tk')){e.preventDefault();volFrom(t)}
+},{passive:false});
+document.getElementById('ply-ov')?.addEventListener('mousemove',showPlyCtrls);
+function seekFrom(e){const vid=document.getElementById('pv');if(!vid.duration)return;const tk=document.getElementById('ply-prog-tk'),rect=tk.getBoundingClientRect(),p=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));vid.currentTime=p*vid.duration;showPlyCtrls()}
+function volFrom(e){const tk=document.getElementById('ply-vol-tk'),rect=tk.getBoundingClientRect(),p=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));setVol(p)}
 
 /* ═══════════════════════════════════════
    SEARCH
@@ -1861,9 +2183,9 @@ function cpClip(txt){
 }
 
 let toastT;
-function showToast(msg){
+function showToast(msg,persist){
   const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
-  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800);
+  clearTimeout(toastT);if(!persist)toastT=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
 init();
