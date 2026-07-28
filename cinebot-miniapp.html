@@ -1098,7 +1098,7 @@ const hpt = (t='light')=>{try{tg?.HapticFeedback?.impactOccurred(t)}catch(e){}};
 /* ═══════════════════════════════════════
    API
 ═══════════════════════════════════════ */
-async function api(path,method='GET',body=null,timeout=2500){
+async function api(path,method='GET',body=null,timeout=8000){
   try{
     const c=new AbortController();const t=setTimeout(()=>c.abort(),timeout);
     const o={method,headers:{'Content-Type':'application/json','X-Telegram-Init-Data':tg?.initData||''},signal:c.signal};
