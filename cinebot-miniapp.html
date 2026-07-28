@@ -1058,11 +1058,10 @@ input,textarea,select{font-family:inherit}
 /* ═══════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════ */
-// ══ VPS'te serve ediliyorsa (api.py üzerinden) boş bırak ══
-// Vercel'e deploy ediyorsan API adresini VPS IP'ne değiştir:
-// Örn: const API = 'http://1.2.3.4:8000';
-// ════════════════════════════════════════════════════════
-const API        = '';
+// ══ API: aynı sunucu (api.py) ise boş bırak; VPS IP+port yaz ══
+// URL parametresi ile geçersiz kıl: ?api=http://1.2.3.4:8000
+// ══════════════════════════════════════════════════════════════
+const API        = (()=>{const p=new URLSearchParams(location.search);return p.get('api')||window.location.origin||'';})();
 const OWNER      = 8078887681;
 const ADMINS     = [OWNER];
 const BOT_USER   = 'Ghostsyncfilmbot';
@@ -1104,9 +1103,11 @@ async function api(path,method='GET',body=null,timeout=2500){
     const c=new AbortController();const t=setTimeout(()=>c.abort(),timeout);
     const o={method,headers:{'Content-Type':'application/json','X-Telegram-Init-Data':tg?.initData||''},signal:c.signal};
     if(body)o.body=JSON.stringify(body);
-    const r=await fetch(API+path,o);clearTimeout(t);
+    const url=API+path;
+    const r=await fetch(url,o);clearTimeout(t);
+    if(!r.ok){console.warn('API',r.status,url);try{const e=await r.text();console.warn('API err:',e.slice(0,200))}catch{}}
     return r.ok?r.json():null;
-  }catch{return null}
+  }catch(e){console.warn('API catch',path,e?.message);return null}
 }
 
 /* ═══════════════════════════════════════
@@ -1149,7 +1150,6 @@ let movies=[],series=[],anime=[],lives=[],trending=[],contWatch=[];
 let favSet=new Set(),wlSet=new Set(),folSet=new Set();
 let curDet=null,curF='',srchT=null;
 let hIdx2=0,hTimer2=null,hItems2=[];
-let hlsInstnst=null;
 let refCode='';
 let logoClickCount=0,logoClickTimer=null;
 
@@ -1264,7 +1264,7 @@ function buildHero(){
       <div class="hbg" style="${c.poster_url?'background-image:url('+c.poster_url+')':'background:linear-gradient(135deg,#0b0e22,#14163d)'}"></div>
       <div class="hbody">
         <div class="htag">👻 ${i===0?'ÖNE ÇIKAN':'KEŞFET'}</div>
-        <div class="htitle">${c.title}</div>
+        <div class="htitle">${escH(c.title)}</div>
         <div class="hmeta">
           ${c.rating?`<span><span class="hstar">★</span>${c.rating}</span><div class="hmetadot"></div>`:''}
           ${c.year?`<span>${c.year}</span><div class="hmetadot"></div>`:''}
@@ -1299,12 +1299,12 @@ const E={movie:'🎬',series:'📺',anime:'⛩️'};
 function pcH(c){
   return`<div class="pc" onclick="openDet(${c.id})">
     <div class="pc-img">
-      ${c.poster_url?`<img src="${c.poster_url}" loading="lazy" onerror="this.style.display='none'">`:`<div class="pc-ph">${c._e||E[c.type]||'👻'}</div>`}
+      ${c.poster_url?`<img src="${escH(c.poster_url)}" loading="lazy" onerror="this.style.display='none'">`:`<div class="pc-ph">${c._e||E[c.type]||'👻'}</div>`}
       <div class="pc-grad"></div>
       ${c.is_new?'<div class="pc-new">YENİ</div>':''}
       ${c.rating?`<div class="pc-star">★ ${c.rating}</div>`:''}
     </div>
-    <div class="pc-title">${c.title}</div>
+    <div class="pc-title">${escH(c.title)}</div>
     ${c.year?`<div class="pc-meta">${c.year}${c.duration?' · '+c.duration+'dk':''}</div>`:''}
   </div>`;
 }
@@ -1321,18 +1321,18 @@ function buildSecs(){
   const lrow=lives.slice(0,6).map(c=>`
     <div class="lvc" onclick="openLvP(${c.id},'${eq(c.name)}','${eq(c.m3u8_url)}')">
       <div class="lvc-in">
-        <div class="lvc-logo">${c.logo_url?`<img src="${c.logo_url}">`:'📺'}</div>
-        <div><div class="lvc-name">${c.name}</div><div class="lvc-live"><div class="pulse"></div>CANLI</div></div>
+        <div class="lvc-logo">${c.logo_url?`<img src="${escH(c.logo_url)}">`:'📺'}</div>
+        <div><div class="lvc-name">${escH(c.name)}</div><div class="lvc-live"><div class="pulse"></div>CANLI</div></div>
       </div>
     </div>`).join('');
 
   const cwRow=contWatch.map(c=>`
     <div class="cw-item" onclick="openDet(${c.id})">
       <div class="cw-thumb">
-        ${c.poster_url?`<img src="${c.poster_url}" loading="lazy">`:`<div class="cw-ph">${E[c.type]||'👻'}</div>`}
-        <div class="cw-bar"><div class="cw-prog" style="width:${c.prog||30}%"></div></div>
+        ${c.poster_url?`<img src="${escH(c.poster_url)}" loading="lazy">`:`<div class="cw-ph">${E[c.type]||'👻'}</div>`}
+        <div class="cw-bar"><div class="cw-prog" style="width:${c.progress||30}%"></div></div>
       </div>
-      <div class="cw-title">${c.title}</div>
+      <div class="cw-title">${escH(c.title)}</div>
     </div>`).join('');
 
   document.getElementById('home-secs').innerHTML=`
@@ -1360,12 +1360,12 @@ function renderLive(){
   const el=document.getElementById('live-sc');
   const cats=[...new Set(lives.map(c=>c.category))];
   el.innerHTML=cats.map(cat=>`
-    <div class="cat-lbl">${cat}</div>
+    <div class="cat-lbl">${escH(cat)}</div>
     ${lives.filter(c=>c.category===cat).map(c=>`
       <div class="lv-item" onclick="openLvP(${c.id},'${eq(c.name)}','${eq(c.m3u8_url)}')">
-        <div class="lv-logo">${c.logo_url?`<img src="${c.logo_url}">`:'📺'}</div>
+        <div class="lv-logo">${c.logo_url?`<img src="${escH(c.logo_url)}">`:'📺'}</div>
         <div style="flex:1;min-width:0">
-          <div class="lv-name">${c.name}</div>
+          <div class="lv-name">${escH(c.name)}</div>
           <div class="lv-live"><div class="hlt ${c.is_healthy!==0?'ok':'err'}"></div>${c.is_healthy!==0?'CANLI YAYIN':'SORUNLU OLABİLİR'}</div>
         </div>
         <div class="lv-arr">▶</div>
@@ -1408,8 +1408,8 @@ async function renderWL(){
   if(!wl.length){sc.innerHTML='<div class="empty"><div class="empty-i">📌</div><div class="empty-t">Watchlist boş</div><div class="empty-s">Detay sayfasından 🔖 ile ekle</div></div>';return}
   document.getElementById('wl-grid').innerHTML=wl.map(c=>`
     <div class="sc" onclick="openDet(${c.id})">
-      <div class="sc-img">${c.poster_url?`<img src="${c.poster_url}" loading="lazy">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
-      <div class="sc-title">${c.title}</div><div class="sc-sub">${c.year||''}</div>
+      <div class="sc-img">${c.poster_url?`<img src="${escH(c.poster_url)}" loading="lazy">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
+      <div class="sc-title">${escH(c.title)}</div><div class="sc-sub">${c.year||''}</div>
     </div>`).join('');
 }
 
@@ -1419,8 +1419,8 @@ async function showFavs(){
   navTo('search');
   document.getElementById('sgrid').innerHTML=favs.map(c=>`
     <div class="sc" onclick="openDet(${c.id})">
-      <div class="sc-img">${c.poster_url?`<img src="${c.poster_url}">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
-      <div class="sc-title">${c.title}</div>
+      <div class="sc-img">${c.poster_url?`<img src="${escH(c.poster_url)}">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
+      <div class="sc-title">${escH(c.title)}</div>
     </div>`).join('');
 }
 
@@ -1430,8 +1430,8 @@ async function showHistory(){
   navTo('search');
   document.getElementById('sgrid').innerHTML=hist.map(c=>`
     <div class="sc" onclick="openDet(${c.id})">
-      <div class="sc-img">${c.poster_url?`<img src="${c.poster_url}">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
-      <div class="sc-title">${c.title}</div>
+      <div class="sc-img">${c.poster_url?`<img src="${escH(c.poster_url)}">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
+      <div class="sc-title">${escH(c.title)}</div>
     </div>`).join('');
 }
 
@@ -1472,7 +1472,7 @@ async function openDet(id){
 
   const pf=document.getElementById('d-pf');
   pf.innerHTML=content.poster_url
-    ?`<img src="${content.poster_url}" style="width:100%;height:100%;object-fit:cover">`
+    ?`<img src="${escH(content.poster_url)}" style="width:100%;height:100%;object-fit:cover">`
     :`<div class="det-ph">${E[content.type]||'👻'}</div>`;
 
   document.getElementById('d-title').textContent=content.title;
@@ -1500,9 +1500,9 @@ async function openDet(id){
 
   // Continue watching progress
   const hist=contWatch.find(c=>c.id===id);
-  if(hist&&hist.prog>5){
+  if(hist&&hist.progress>5){
     document.getElementById('d-continue').style.display='block';
-    document.getElementById('d-prog-bar').style.width=`${hist.prog}%`;
+    document.getElementById('d-prog-bar').style.width=`${hist.progress}%`;
   }
 
   // Stars
@@ -1550,10 +1550,10 @@ async function loadReviews(cid){
       <div class="rev-item">
         <div class="rev-head">
           <div class="rev-av">${(rev.username||rev.full_name||'?')[0].toUpperCase()}</div>
-          <div class="rev-name">@${rev.username||'kullanıcı'}</div>
+          <div class="rev-name">@${escH(rev.username||'kullanıcı')}</div>
         </div>
         ${rev.spoiler?'<div class="rev-spoiler">⚠️ SPOILER</div>':''}
-        <div class="rev-txt">${rev.review}</div>
+        <div class="rev-txt">${escH(rev.review)}</div>
       </div>`).join('')}`;
 }
 
@@ -1671,7 +1671,7 @@ document.getElementById('det-ov').addEventListener('touchend',e=>{
 /* ═══════════════════════════════════════
    PLAYER (v2 — Premium HLS.js)
 ═══════════════════════════════════════ */
-let hlsInstnst=null;
+let hlsInst=null;
 let plyCtx=null;
 let plyHideT=null;
 
@@ -1894,8 +1894,8 @@ async function doSearch(q,typeOv){
   if(!items?.length){grid.innerHTML='<div style="grid-column:span 3" class="empty"><div class="empty-i">😔</div><div class="empty-t">Sonuç bulunamadı</div></div>';return}
   grid.innerHTML=items.map(c=>`
     <div class="sc" onclick="openDet(${c.id})">
-      <div class="sc-img">${c.poster_url?`<img src="${c.poster_url}" loading="lazy">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
-      <div class="sc-title">${c.title}</div>
+      <div class="sc-img">${c.poster_url?`<img src="${escH(c.poster_url)}" loading="lazy">`:`<div class="sc-ph">${E[c.type]||'👻'}</div>`}</div>
+      <div class="sc-title">${escH(c.title)}</div>
       <div class="sc-sub">${E[c.type]||''} ${c.year||''} ${c.rating?'★'+c.rating:''}</div>
     </div>`).join('');
 }
@@ -2022,8 +2022,8 @@ async function loadCollections(){
   el.innerHTML=r.collections.map(c=>`
     <div class="mi" onclick="showCollection(${c.id})">
       <div class="mi-ic a">📚</div>
-      <div class="mi-t"><div class="mi-n">${c.name}</div>
-      <div class="mi-d">${c.item_count||0} içerik · ${c.description?.slice(0,40)||''}</div></div>
+      <div class="mi-t"><div class="mi-n">${escH(c.name)}</div>
+      <div class="mi-d">${c.item_count||0} içerik · ${escH(c.description?.slice(0,40)||'')}</div></div>
       <div class="mi-a">›</div>
     </div>`).join('');
 }
@@ -2050,7 +2050,7 @@ async function loadWatchStats(){
 // ── BADGES ──
 async function loadBadges(){
   const r=await api('/api/user/badges');const el=document.getElementById('badges-list');
-  const em={'izleyici_10':'👁','sinema_25':'🎬','usto_50':'🎥','efsane_100':'🏆','legand_250':'💎','mit_500':'👑'};
+  const em={'izleyici_10':'👁','sinema_25':'🎬','usta_50':'🎥','efsane_100':'🏆','legend_250':'💎','mit_500':'👑'};
   if(!r?.badges?.length){el.innerHTML='<div class="empty-t">🏅 Henüz rozet yok. İzledikçe kazan!</div>';return}
   el.innerHTML=r.badges.map(b=>`
     <div class="mi"><div class="mi-ic y">${em[b.badge_code]||'🏅'}</div>
@@ -2134,7 +2134,7 @@ async function advSearch(){
   el.innerHTML=res.items.map(i=>`
     <div class="mi" onclick="showToast('${i.title}')">
     <div class="mi-ic g">${i.type==='movie'?'🎬':'📺'}</div>
-    <div class="mi-t"><div class="mi-n">${i.title}</div>
+    <div class="mi-t"><div class="mi-n">${escH(i.title)}</div>
     <div class="mi-d">⭐${i.rating||'?'} · ${i.year||'?'}</div></div></div>`).join('');
 }
 
@@ -2187,6 +2187,8 @@ function showToast(msg,persist){
   const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
   clearTimeout(toastT);if(!persist)toastT=setTimeout(()=>el.classList.remove('show'),2800);
 }
+
+const escH=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 init();
 </script>
