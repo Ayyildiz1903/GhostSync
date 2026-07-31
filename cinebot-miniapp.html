@@ -8,7 +8,50 @@
 <title>Ghost Sync</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
-<script async src="https://telegram.org/js/telegram-web-app.js"></script>
+<script async src="https://telegram.org/js/telegram-web-app.js">
+// Theme Switcher Logic
+const themes = ['', 'theme-cyan', 'theme-gold', 'theme-black'];
+let currentThemeIdx = 0;
+function cycleTheme() {
+    currentThemeIdx = (currentThemeIdx + 1) % themes.length;
+    document.body.className = themes[currentThemeIdx];
+    localStorage.setItem('ghost_theme', themes[currentThemeIdx]);
+    if(window.Telegram?.WebApp) Telegram.WebApp.HapticFeedback?.impactOccurred('light');
+}
+
+// Restore saved theme on load
+(function restoreTheme() {
+    const saved = localStorage.getItem('ghost_theme');
+    if (saved) {
+        document.body.className = saved;
+        currentThemeIdx = themes.indexOf(saved);
+    }
+})();
+
+// Check Resume Playback Banner
+async function checkResumePlayback() {
+    try {
+        const res = await api('/api/resume-watching');
+        if (res && res.resume) {
+            const item = res.resume.content;
+            const prog = res.resume.progress || 0;
+            const container = document.getElementById('resume-container');
+            if (container && item) {
+                container.innerHTML = `
+                    <div class="resume-banner" onclick="openDet(${item.id})">
+                        <div>
+                            <div class="resume-title">▶️ Devam Et: ${escH(item.title)}</div>
+                            <div class="resume-sub">Kaldığın yer: %${Math.round(prog)}</div>
+                        </div>
+                        <button class="resume-btn">İzle ▶</button>
+                    </div>
+                `;
+            }
+        }
+    } catch(e){}
+}
+
+</script>
 <script async src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 <style>
 /* ══════════════════════════════════
@@ -593,6 +636,24 @@ input,textarea,select{font-family:inherit}
 @keyframes ghostFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
 
 .pb{padding-bottom:18px}
+
+/* ══ THEME VARIATIONS ══ */
+body.theme-cyan { --p:#00f2fe; --p2:#4facfe; --pglow:rgba(0,242,254,0.35); --acc:#00f2fe; }
+body.theme-gold { --p:#f6d365; --p2:#fda085; --pglow:rgba(246,211,101,0.35); --acc:#f6d365; }
+body.theme-black { --bg:#000000; --s1:#0c0c0c; --s2:#161616; }
+
+/* ══ SPOILER MASK ══ */
+.spoiler-text { background: #222; color: transparent; cursor: pointer; user-select: none; border-radius: 4px; padding: 0 4px; transition: all .2s; }
+.spoiler-text.revealed { background: transparent; color: inherit; }
+.spoiler-text::after { content: ' 👁️ Spoiler'; color: #aaa; font-size: 10px; }
+.spoiler-text.revealed::after { content: ''; }
+
+/* ══ RESUME BANNER ══ */
+.resume-banner { background: linear-gradient(135deg, rgba(108,99,255,0.2), rgba(0,242,254,0.15)); border: 1px solid var(--p); border-radius: 12px; padding: 10px 14px; margin: 10px 14px 0; display: flex; align-items: center; justify-content: space-between; cursor: pointer; backdrop-filter: blur(10px); }
+.resume-title { font-size: 13px; font-weight: 700; color: #fff; }
+.resume-sub { font-size: 11px; color: var(--t2); }
+.resume-btn { background: var(--p); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: none; }
+
 </style>
 </head>
 <body>
@@ -610,6 +671,7 @@ input,textarea,select{font-family:inherit}
       <div class="logo-txt">GHOST SYNC</div>
     </div>
     <div class="hdr-r">
+        <div class="hdr-ic" onclick="cycleTheme()" title="Tema Değiştir">🎨</div>
       <div class="hdr-ic" onclick="navTo('search')">🔍</div>
       <div class="hdr-ic" id="notif-ic" onclick="navTo('profile')">
         🔔<div class="notif-badge" id="notif-badge"></div>
@@ -2197,4 +2259,4 @@ const escH=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/
 init();
 </script>
 </body>
-</html> 
+</html>
