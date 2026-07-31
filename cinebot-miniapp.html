@@ -1168,8 +1168,12 @@ function init(){
     const p=new URLSearchParams(location.search);
     if(p.get('stream'))openStrById(+p.get('stream'));
     if(p.get('live'))  openLiveById(+p.get('live'));
-    if(p.get('start')?.startsWith('c_'))
-      openDet(parseInt(p.get('start').slice(2))||0);
+    const startParam = p.get('start') || p.get('content') || tg?.initDataUnsafe?.start_param || '';
+    if(startParam){
+      if(startParam.startsWith('c_')) openDet(parseInt(startParam.slice(2))||0);
+      else if(startParam.startsWith('content_')) openDet(parseInt(startParam.slice(8))||0);
+      else if(!isNaN(+startParam)) openDet(+startParam);
+    }
   },800);
   // Easter egg
   document.getElementById('logo-ic').addEventListener('click',()=>{
@@ -2193,4 +2197,4 @@ const escH=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/
 init();
 </script>
 </body>
-</html> 
+</html>
