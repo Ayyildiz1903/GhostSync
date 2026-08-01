@@ -8,7 +8,102 @@
 <title>Ghost Sync</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
-<script async src="https://telegram.org/js/telegram-web-app.js">
+<script src="https://telegram.org/js/telegram-web-app.js">
+// Watch Party Chat System
+let currentPartyCode = null;
+let partyPollInterval = null;
+
+async function initWatchParty(code) {
+    currentPartyCode = code;
+    await joinPartyRoom(code);
+    await loadPartyChatData();
+    if (!partyPollInterval) {
+        partyPollInterval = setInterval(loadPartyChatData, 3000);
+    }
+}
+
+async function joinPartyRoom(code) {
+    try {
+        await api('/api/party/join', 'POST', { code: code });
+    } catch(e){}
+}
+
+async function loadPartyChatData() {
+    if (!currentPartyCode) return;
+    try {
+        const res = await api('/api/party/chat/' + currentPartyCode);
+        if (res && res.data) {
+            renderPartyMembers(res.data.members);
+            renderPartyMessages(res.data.messages);
+        }
+    } catch(e){}
+}
+
+function renderPartyMembers(members) {
+    const container = document.getElementById('party-members-container');
+    if (!container) return;
+    if (!members || !members.length) {
+        container.innerHTML = '<div class="member-chip">🟢 Oda Kurucusu</div>';
+        return;
+    }
+    container.innerHTML = members.map(m => `
+        <div class="member-chip">${escH(m.full_name || m.username || 'Üye')}</div>
+    `).join('');
+}
+
+function renderPartyMessages(messages) {
+    const feed = document.getElementById('party-chat-feed');
+    if (!feed) return;
+    if (!messages || !messages.length) {
+        feed.innerHTML = '<div class="chat-msg" style="color:#888;">💬 Henüz mesaj yok. İlk mesajı siz yazın!</div>';
+        return;
+    }
+    feed.innerHTML = messages.map(m => `
+        <div class="chat-msg"><span class="chat-user">${escH(m.user_name)}:</span>${escH(m.message)}</div>
+    `).join('');
+    feed.scrollTop = feed.scrollHeight;
+}
+
+async function sendPartyMsg(textOverride) {
+    const input = document.getElementById('party-chat-input');
+    const msgText = textOverride || (input ? input.value : '');
+    if (!msgText || !currentPartyCode) return;
+    if (input && !textOverride) input.value = '';
+    try {
+        await api('/api/party/send-message', 'POST', { code: currentPartyCode, message: msgText });
+        await loadPartyChatData();
+    } catch(e){}
+}
+
+
+// Spin Wheel JS
+function openSpinModal() {
+    document.getElementById('spinModal').classList.add('active');
+}
+function closeSpinModal() {
+    document.getElementById('spinModal').classList.remove('active');
+}
+let isSpinning = false;
+async function startSpinAnimation() {
+    if (isSpinning) return;
+    isSpinning = true;
+    const wheel = document.getElementById('wheelCanvas');
+    const randomDeg = 1440 + Math.floor(Math.random() * 360);
+    wheel.style.transform = `rotate(${randomDeg}deg)`;
+    setTimeout(async () => {
+        isSpinning = false;
+        try {
+            await api('/api/spin-claim', 'POST', { reward_key: 'frame_gold' });
+            alert('🎉 Tebrikler! 👑 Gold VIP Profil Çerçevesi Kazandınız!');
+        } catch(e) {
+            alert('🎉 Tebrikler! Bugünün ödülünü kazandınız!');
+        }
+        closeSpinModal();
+    }, 4100);
+}
+
+</script>
+<script>
 // Theme Switcher Logic
 const themes = ['', 'theme-cyan', 'theme-gold', 'theme-black'];
 let currentThemeIdx = 0;
@@ -654,6 +749,39 @@ body.theme-black { --bg:#000000; --s1:#0c0c0c; --s2:#161616; }
 .resume-sub { font-size: 11px; color: var(--t2); }
 .resume-btn { background: var(--p); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: none; }
 
+
+/* ══ WATCH PARTY LIVE CHAT ══ */
+.party-container { background: rgba(12,14,28,0.95); border: 1px solid var(--p); border-radius: 16px; padding: 14px; margin: 14px; backdrop-filter: blur(15px); }
+.party-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(108,99,255,0.2); padding-bottom: 8px; }
+.party-title { font-size: 14px; font-weight: 800; color: var(--p); display: flex; align-items: center; gap: 6px; }
+.party-members { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 6px 0; margin-bottom: 10px; }
+.member-chip { background: var(--s1); border: 1px solid rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+.member-chip::before { content: '🟢'; font-size: 8px; }
+.chat-feed { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; margin-bottom: 10px; }
+.chat-msg { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 6px 10px; font-size: 12px; }
+.chat-user { font-weight: 700; color: var(--acc); margin-right: 6px; }
+.chat-input-box { display: flex; gap: 8px; }
+.chat-input { flex: 1; background: var(--s1); border: 1px solid rgba(108,99,255,0.3); border-radius: 10px; padding: 8px 12px; color: #fff; font-size: 12px; outline: none; }
+.chat-send-btn { background: var(--p); color: #fff; border: none; padding: 8px 14px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+.quick-reactions { display: flex; gap: 6px; margin-bottom: 8px; }
+.reaction-btn { background: var(--s1); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
+
+
+/* ══ VIP GLOW PROFILE FRAMES ══ */
+.vip-avatar-frame { position: relative; display: inline-block; padding: 3px; border-radius: 50%; }
+.frame-gold { background: linear-gradient(45deg, #f6d365, #fda085, #f6d365); box-shadow: 0 0 15px rgba(246,211,101,0.6); animation: framePulse 3s infinite linear; }
+.frame-neon { background: linear-gradient(45deg, #6c63ff, #00f2fe, #ff007f); box-shadow: 0 0 18px rgba(108,99,255,0.7); animation: framePulse 2s infinite linear; }
+.frame-cyber { background: linear-gradient(45deg, #00f2fe, #4facfe, #00f2fe); box-shadow: 0 0 15px rgba(0,242,254,0.6); animation: framePulse 2.5s infinite linear; }
+@keyframes framePulse { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+/* ══ DAILY 3D SPIN WHEEL MODAL ══ */
+.wheel-overlay { position: fixed; inset: 0; background: rgba(4,5,13,0.92); backdrop-filter: blur(25px); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: all .3s; }
+.wheel-overlay.active { opacity: 1; pointer-events: auto; }
+.wheel-box { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 6px solid var(--p); box-shadow: 0 0 35px var(--pglow); overflow: hidden; transition: transform 4s cubic-bezier(0.15, 0.9, 0.15, 1); }
+.wheel-segment { position: absolute; width: 50%; height: 50%; transform-origin: 100% 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 2px 4px #000; }
+.wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid var(--red); z-index: 1001; filter: drop-shadow(0 4px 6px #000); }
+.spin-btn { margin-top: 24px; background: linear-gradient(135deg, var(--p), var(--p2)); color: #fff; font-size: 14px; font-weight: 800; border: none; padding: 12px 28px; border-radius: 25px; box-shadow: 0 6px 20px var(--pglow); cursor: pointer; }
+
 </style>
 </head>
 <body>
@@ -671,6 +799,7 @@ body.theme-black { --bg:#000000; --s1:#0c0c0c; --s2:#161616; }
       <div class="logo-txt">GHOST SYNC</div>
     </div>
     <div class="hdr-r">
+        <div class="hdr-ic" onclick="openSpinModal()" title="Şans Çarkı">🎡</div>
         <div class="hdr-ic" onclick="cycleTheme()" title="Tema Değiştir">🎨</div>
       <div class="hdr-ic" onclick="navTo('search')">🔍</div>
       <div class="hdr-ic" id="notif-ic" onclick="navTo('profile')">
@@ -2258,5 +2387,23 @@ const escH=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/
 
 init();
 </script>
+
+<!-- SPIN WHEEL MODAL -->
+<div class="wheel-overlay" id="spinModal">
+  <div style="font-size:20px;font-weight:800;margin-bottom:15px;color:#fff;">🎡 GÜNLÜK ŞANS ÇARKI</div>
+  <div style="position:relative;">
+    <div class="wheel-pointer"></div>
+    <div class="wheel-box" id="wheelCanvas">
+      <div class="wheel-segment" style="transform:rotate(0deg);background:#6c63ff;">👑 Gold VIP</div>
+      <div class="wheel-segment" style="transform:rotate(72deg);background:#00f2fe;">✨ Neon Glow</div>
+      <div class="wheel-segment" style="transform:rotate(144deg);background:#ff007f;">🏆 Sinefil</div>
+      <div class="wheel-segment" style="transform:rotate(216deg);background:#f6d365;">⚡ Cyber Frame</div>
+      <div class="wheel-segment" style="transform:rotate(288deg);background:#2563eb;">🎁 Sürpriz</div>
+    </div>
+  </div>
+  <button class="spin-btn" onclick="startSpinAnimation()">ÇARKI ÇEVİR ▶</button>
+  <div style="margin-top:15px;color:#aaa;font-size:12px;cursor:pointer;" onclick="closeSpinModal()">Kapat</div>
+</div>
+
 </body>
 </html>
